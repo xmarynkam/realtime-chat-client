@@ -10,14 +10,17 @@
   },
   "dependencies": {
     "@popperjs/core": "^2.11.8",
+    "axios": "^1.9.0",
     "bootstrap": "^5.3.6",
     "laravel-echo": "^2.1.4",
+    "lodash": "^4.17.21",
     "pinia": "^3.0.2",
     "pusher-js": "^8.4.0",
     "vue": "^3.5.13",
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
+    "@types/lodash": "^4.17.17",
     "@vitejs/plugin-vue": "^5.2.3",
     "vite": "^6.2.4",
     "vite-plugin-vue-devtools": "^7.7.2"

@@ -1,99 +1,45 @@
 <template>
-    <div class="container py-4">
-        <h2 class="mb-3">Новий чат</h2>
-        <div class="row g-2 align-items-center mb-4">
-            <div class="col-md-6">
-                <select class="form-select" v-model="selectedUserId">
-                    <option disabled value="">Оберіть користувача</option>
-                    <option v-for="user in availableUsers" :key="user.id" :value="user.id">
-                        {{ user.name }} {{ user.surname }}
-                    </option>
-                </select>
-            </div>
-            <div class="col-auto">
-                <button class="btn btn-primary" :disabled="!selectedUserId" @click="createChat(selectedUserId)">
-                    Створити чат
-                </button>
-            </div>
+    <div class="container mt-5" style="max-width: 400px;">
+        <h2 class="mb-3">Вхід</h2>
+
+        <div v-if="authStore.error" class="alert alert-danger">
+            {{ authStore.error }}
         </div>
 
-        <h2 class="mb-3">Мої чати</h2>
-        <ul class="list-group">
-            <li v-for="chat in chats" :key="chat.id" class="list-group-item">
-                <router-link :to="`/chat/${chat.id}`">
-                    {{ getChatTitle(chat) }}
-                </router-link>
-            </li>
-        </ul>
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input v-model="email" type="email" id="email" class="form-control" required />
+        </div>
+
+        <div class="mb-3">
+            <label for="password" class="form-label">Пароль</label>
+            <input v-model="password" type="password" id="password" class="form-control" required />
+        </div>
+
+        <button class="btn btn-primary" @click="login" :disabled="authStore.loading">
+            {{ authStore.loading ? 'Завантаження...' : 'Увійти' }}
+        </button>
     </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import RouterNames from "@/router/routerNames.js";
+import { router } from "@/router/index.js";
+import { useUserStore } from "@/stores/user.js";
 
-const router = useRouter()
-const availableUsers = ref([])
-const chats = ref([])
-const selectedUserId = ref('')
-const userId = parseInt(localStorage.getItem('user_id'))
+const email = ref('')
+const password = ref('')
 
-const getUsersWithoutChats = async () => {
-    const res = await fetch('/api/users/available', {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-    })
-    availableUsers.value = await res.json()
+const authStore = useAuthStore();
+const userStore = useUserStore();
+
+const login = async () => {
+    await authStore.login(email.value, password.value)
+
+    if (userStore.isAuthenticated) {
+        await router.push({name: RouterNames.CABINET});
+    }
 }
-
-const getChats = async () => {
-    const res = await fetch('/api/chats', {
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-    })
-    const data = await res.json()
-    chats.value = data.chats
-}
-
-const createChat = async (participantId) => {
-    const res = await fetch('/api/chats', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({
-            participant_ids: [participantId],
-            messages: [],
-        }),
-    })
-
-    const newChat = await res.json()
-    router.push(`/chat/${newChat.id}`)
-}
-
-function getChatTitle(chat) {
-    return chat.participants
-        .filter((p) => p.id !== userId)
-        .map((p) => `${p.name} ${p.surname}`)
-        .join(', ')
-}
-
-onMounted(() => {
-    getUsersWithoutChats()
-    getChats()
-})
 </script>
-
-<style scoped>
-select {
-    padding: 6px;
-    margin-right: 8px;
-}
-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-</style>
